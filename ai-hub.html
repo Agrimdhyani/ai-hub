@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bharat AI & Utility Hub</title>
+    <style>
+        :root { 
+            --primary: #8b5cf6; 
+            --bg: #0a0c10; 
+            --card: #161b22; 
+            --text: #e6edf3;
+            --accent: #238636;
+        }
+        body { 
+            font-family: 'Inter', system-ui, sans-serif; 
+            background: var(--bg); color: var(--text); 
+            margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; 
+        }
+
+        h1 { margin-bottom: 5px; color: #fff; }
+        .subtitle { color: #8b949e; margin-bottom: 30px; }
+
+        .section-title { width: 100%; max-width: 900px; border-bottom: 1px solid #30363d; padding-bottom: 10px; margin: 40px 0 20px; color: var(--primary); font-size: 1.2rem; }
+
+        /* The Grid for Customizable Daily Apps */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 15px; width: 100%; max-width: 900px; }
+        
+        .app-card { background: var(--card); padding: 15px; border-radius: 12px; text-align: center; transition: 0.2s; cursor: pointer; border: 1px solid #30363d; text-decoration: none; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+        .app-card:hover { border-color: var(--primary); background: #21262d; transform: translateY(-3px); }
+        .app-icon { font-size: 28px; margin-bottom: 5px; }
+
+        /* AI Tools Permanent List */
+        .ai-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 900px; }
+        .ai-item { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #30363d; transition: 0.3s; }
+        .ai-item:hover { border-color: #58a6ff; }
+        .ai-item h4 { margin: 0 0 8px 0; color: #58a6ff; display: flex; align-items: center; gap: 10px; }
+        .ai-item p { margin: 0; font-size: 13px; color: #8b949e; line-height: 1.5; }
+        .ai-link { margin-top: 15px; display: inline-block; color: var(--accent); text-decoration: none; font-weight: bold; font-size: 14px; }
+
+        /* Controls */
+        .btn-customize { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; margin-top: 25px; font-weight: 600; font-size: 1rem; }
+        .btn-customize:hover { background: #7c3aed; }
+
+        /* Selection Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #1c2128; padding: 25px; border-radius: 15px; width: 90%; max-width: 500px; border: 1px solid var(--primary); }
+        .select-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-height: 350px; overflow-y: auto; padding-right: 10px; }
+        .option { padding: 12px; border: 1px solid #30363d; border-radius: 8px; cursor: pointer; color: #8b949e; display: flex; align-items: center; gap: 10px; }
+        .option.active { border-color: var(--primary); background: rgba(139, 92, 246, 0.1); color: white; }
+    </style>
+</head>
+<body>
+
+    <h1>India AI Explorer</h1>
+    <div class="subtitle" id="time-date"></div>
+
+    <h3 class="section-title">Your Daily Dock</h3>
+    <div class="grid" id="main-grid"></div>
+    <button class="btn-customize" onclick="openModal()">+ Customize Your Apps</button>
+
+    <h3 class="section-title">AI Power Tools (Permanent Library)</h3>
+    <div class="ai-list" id="ai-library"></div>
+
+    <div class="modal" id="appModal">
+        <div class="modal-content">
+            <h2 style="margin-top:0;">Pick Your Favorites</h2>
+            <p style="font-size: 13px; color: #8b949e;">Select the apps you use daily:</p>
+            <div class="select-grid" id="options-grid"></div>
+            <button class="btn-customize" style="width:100%; margin-top:20px;" onclick="saveSelection()">Update Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        // THE FULL LIST OF APPS FOR CUSTOMIZATION
+        const availableDailyApps = [
+            { id: 1, name: 'Spotify', icon: '🎵', url: 'https://open.spotify.com' },
+            { id: 2, name: 'WhatsApp', icon: '💬', url: 'https://web.whatsapp.com' },
+            { id: 3, name: 'YouTube', icon: '📺', url: 'https://youtube.com' },
+            { id: 4, name: 'Gmail', icon: '📧', url: 'https://gmail.com' },
+            { id: 5, name: 'LinkedIn', icon: '💼', url: 'https://linkedin.com' },
+            { id: 6, name: 'Amazon', icon: '🛒', url: 'https://amazon.in' },
+            { id: 7, name: 'Zomato', icon: '🛵', url: 'https://zomato.com' },
+            { id: 8, name: 'Instagram', icon: '📸', url: 'https://instagram.com' },
+            { id: 9, name: 'Canva', icon: '🎨', url: 'https://canva.com' },
+            { id: 10, name: 'GitHub', icon: '💻', url: 'https://github.com' },
+            { id: 11, name: 'Hotstar', icon: '🏏', url: 'https://hotstar.com' },
+            { id: 12, name: 'Google Maps', icon: '📍', url: 'https://maps.google.com' }
+        ];
+
+        // PERMANENT AI TOOLS
+        const aiLibrary = [
+            { name: 'Gemini', icon: '✨', use: 'Google’s AI for deep research, coding, and creative writing.', url: 'https://gemini.google.com' },
+            { name: 'ChatGPT', icon: '💬', use: 'The standard for conversational AI and answering queries.', url: 'https://chat.openai.com' },
+            { name: 'Perplexity', icon: '🔍', use: 'Real-time AI search engine with cited web sources.', url: 'https://perplexity.ai' },
+            { name: 'Claude', icon: '📝', use: 'Known for high-quality writing and summarizing long files.', url: 'https://claude.ai' },
+            { name: 'Midjourney', icon: '🖼️', use: 'The gold standard for generating artistic AI images.', url: 'https://midjourney.com' },
+            { name: 'Gamma', icon: '📊', use: 'Create beautiful presentations from a single prompt.', url: 'https://gamma.app' },
+            { name: 'Luma Dream', icon: '🎬', use: 'Creates realistic high-quality videos from text.', url: 'https://lumalabs.ai' },
+            { name: 'ElevenLabs', icon: '🗣️', use: 'Top-tier realistic AI voice and speech generator.', url: 'https://elevenlabs.io' },
+            { name: 'Remove.bg', icon: '✂️', use: 'Instantly removes backgrounds from any image.', url: 'https://remove.bg' },
+            { name: 'Tome', icon: '📖', use: 'AI-driven storytelling and business decks.', url: 'https://tome.app' },
+            { name: 'DeepL', icon: '🌐', use: 'Smartest translator for global and local languages.', url: 'https://deepl.com' },
+            { name: 'Wolfram Alpha', icon: '🔢', use: 'Computational engine for complex math and science.', url: 'https://wolframalpha.com' },
+            { name: 'Jasper', icon: '✍️', use: 'Professional AI content writing for blogs and ads.', url: 'https://jasper.ai' },
+            { name: 'GitHub Copilot', icon: '👨‍💻', use: 'Essential AI companion for software developers.', url: 'https://github.com/features/copilot' },
+            { name: 'Otter.ai', icon: '🎙️', use: 'AI that records and transcribes your meetings.', url: 'https://otter.ai' }
+        ];
+
+        let selectedIds = JSON.parse(localStorage.getItem('myCustomApps')) || [1, 2, 3, 12];
+
+        function updateDisplay() {
+            renderDashboard();
+            renderAIList();
+            document.getElementById('time-date').innerText = new Date().toDateString();
+        }
+
+        function renderDashboard() {
+            const grid = document.getElementById('main-grid');
+            grid.innerHTML = '';
+            availableDailyApps.forEach(app => {
+                if (selectedIds.includes(app.id)) {
+                    grid.innerHTML += `
+                        <a href="${app.url}" target="_blank" class="app-card">
+                            <div class="app-icon">${app.icon}</div>
+                            <div style="font-size:12px; font-weight:600;">${app.name}</div>
+                        </a>`;
+                }
+            });
+        }
+
+        function renderAIList() {
+            const lib = document.getElementById('ai-library');
+            lib.innerHTML = ''; // Clear existing
+            aiLibrary.forEach(tool => {
+                lib.innerHTML += `
+                    <div class="ai-item">
+                        <h4>${tool.icon} ${tool.name}</h4>
+                        <p>${tool.use}</p>
+                        <a href="${tool.url}" target="_blank" class="ai-link">Launch Tool →</a>
+                    </div>`;
+            });
+        }
+
+        function openModal() {
+            document.getElementById('appModal').style.display = 'flex';
+            const optGrid = document.getElementById('options-grid');
+            optGrid.innerHTML = '';
+            availableDailyApps.forEach(app => {
+                const active = selectedIds.includes(app.id) ? 'active' : '';
+                optGrid.innerHTML += `<div class="option ${active}" onclick="toggleApp(${app.id})">
+                    <span>${app.icon}</span> ${app.name}
+                </div>`;
+            });
+        }
+
+        function toggleApp(id) {
+            if (selectedIds.includes(id)) {
+                selectedIds = selectedIds.filter(i => i !== id);
+            } else {
+                selectedIds.push(id);
+            }
+            openModal(); // Refresh the list in modal
+        }
+
+        function saveSelection() {
+            localStorage.setItem('myCustomApps', JSON.stringify(selectedIds));
+            document.getElementById('appModal').style.display = 'none';
+            renderDashboard();
+        }
+
+        // Close modal if user clicks outside of it
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('appModal')) {
+                document.getElementById('appModal').style.display = "none";
+            }
+        }
+
+        updateDisplay();
+    </script>
+</body>
+</html>
